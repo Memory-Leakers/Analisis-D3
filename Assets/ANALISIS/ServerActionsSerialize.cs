@@ -1,10 +1,10 @@
+using Gamekit3D;
 using System;
 using System.Collections;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class ServerActions : MonoBehaviour
+public class ServerActionsSerialize : MonoBehaviour
 {
     private class DataToSend
     {
@@ -135,7 +135,7 @@ public class ServerActions : MonoBehaviour
 
     private void OnEnable()
     {
-        
+        //PlayerController.Die += OnPlayerDeath;
     }
 
     private void OnDisable()
