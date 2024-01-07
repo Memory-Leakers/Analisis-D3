@@ -24,6 +24,7 @@ public class ServerActionsSerialize : MonoBehaviour
 
         public ActionSuccesfull onAccionSuccesfull = null;
     }
+
     private class SessionStart : DataToSend
     {
         // Constructor
@@ -46,6 +47,7 @@ public class ServerActionsSerialize : MonoBehaviour
             return form;
         }
     }
+
     private class SessionEnd : DataToSend
     {
         // Constructor
@@ -131,6 +133,8 @@ public class ServerActionsSerialize : MonoBehaviour
 
     private SessionEnd _sessionEnd;
 
+    private int _step = 0;
+
     delegate void ActionSuccesfull(UnityWebRequest www);
 
     private void OnEnable()
@@ -154,7 +158,6 @@ public class ServerActionsSerialize : MonoBehaviour
             Debug.Log(www.error);
         else
             dataToSend.onAccionSuccesfull?.Invoke(www);
-
     }
 
     //Callbacks
@@ -163,29 +166,38 @@ public class ServerActionsSerialize : MonoBehaviour
         DateTime dateTime = DateTime.Now;
         _sessionStart = new SessionStart(dateTime, SessionCreatedSuccessfully);
 
+        _step = 0;
+
         StartCoroutine(WebRequest(_sessionStart));
     }
 
     private void OnSessionEnd()
     {
         DateTime dateTime = DateTime.Now;
-        _sessionEnd = new SessionEnd(_sessionStart.ID, dateTime, SessionCreatedSuccessfully);
+        _sessionEnd = new SessionEnd(_sessionStart.ID, dateTime, SessionClosedSuccessfully);
+
+        _step = 0;
 
         StartCoroutine(WebRequest(_sessionEnd));
     }
 
-    private void OnPlayerMoving(int level, float positionX, float positionY, float positionZ, int step)
+    private void OnPlayerMoving(int level, float positionX, float positionY, float positionZ)
     {
         DateTime dateTime = DateTime.Now;
-        _events = new Events("Position", level, positionX, positionY, positionZ, (int)_sessionStart.ID, dateTime, step, EventPositionSuccessfully);
-
+        _events = new Events("Position", level, positionX, positionY, positionZ, (int)_sessionStart.ID, dateTime, _step, EventPositionSuccessfully);
+        
+        _step++;
+        
         StartCoroutine(WebRequest(_events));
     }
 
-    private void OnPlayerDeath(int level, float positionX, float positionY, float positionZ, int step)
+    private void OnPlayerDeath(int level, float positionX, float positionY, float positionZ)
     {
         DateTime dateTime = DateTime.Now;
-        _events = new Events("Death", level, positionX, positionY, positionZ, (int) _sessionStart.ID, dateTime, step, EventPositionSuccessfully);
+
+        _events = new Events("Death", level, positionX, positionY, positionZ, (int) _sessionStart.ID, dateTime, _step, EventDeathSuccessfully);
+
+        //_step++;
     }
 
     //When Action successfully
