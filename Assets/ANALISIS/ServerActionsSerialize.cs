@@ -1,10 +1,12 @@
 using Gamekit3D;
+using Gamekit3D.Message;
 using System;
 using System.Collections;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class ServerActionsSerialize : MonoBehaviour
+public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
 {
     private class DataToSend
     {
@@ -114,12 +116,25 @@ public class ServerActionsSerialize : MonoBehaviour
 
             form.AddField("Type", _type);
             form.AddField("Level", _level);
-            form.AddField("Position_X", _positionX.ToString());
-            form.AddField("Position_Y", _positionY.ToString());
-            form.AddField("Position_Z", _positionZ.ToString());
+
+            string posX = _positionX.ToString();
+            if (posX.Contains(","))
+                posX = posX.Replace(",", ".");
+
+            string posY = _positionY.ToString();
+            if (posY.Contains(","))
+                posY = posY.Replace(",", ".");
+
+            string posZ = _positionZ.ToString();
+            if (posZ.Contains(","))
+                posZ = posZ.Replace(",", ".");
+
+            form.AddField("Position_X", posX);
+            form.AddField("Position_Y", posY);
+            form.AddField("Position_Z", posZ);
             form.AddField("Session_id", _session_id);
-            form.AddField("Date", RequestDate);
             form.AddField("Step", _step);
+            form.AddField("Date", RequestDate);
 
             Debug.Log(RequestDate);
 
@@ -135,21 +150,80 @@ public class ServerActionsSerialize : MonoBehaviour
 
     private int _step = 0;
 
+    private Damageable m_Damageable;
+
+    [SerializeField] private Transform _playerTransfrom;
+
+    private float _moveCountDown = 2;
+
     delegate void ActionSuccesfull(UnityWebRequest www);
+
+    private void Start()
+    {
+        OnSessionStart();
+    }
+
+    private void OnApplicationQuit()
+    {
+        OnSessionEnd();
+    }
 
     private void OnEnable()
     {
         //PlayerController.Die += OnPlayerDeath;
+        m_Damageable = GameObject.Find("Ellen").GetComponent<Damageable>();
+        m_Damageable.onDamageMessageReceivers.Add(this);
+
+        if (_playerTransfrom != null)
+            _playerTransfrom = GameObject.Find("Ellen").GetComponent<Transform>();
     }
 
     private void OnDisable()
     {
-        
+        m_Damageable.onDamageMessageReceivers.Remove(this);
+    }
+
+    private void Update()
+    {
+        _moveCountDown -= Time.deltaTime;
+
+        if (_moveCountDown <= 0)
+        {
+            _moveCountDown = 10;
+
+            OnPlayerMoving(1, _playerTransfrom.position);
+        }
+    }
+
+    public void OnReceiveMessage(MessageType type, object sender, object data)
+    {
+        switch (type)
+        {
+            case MessageType.DAMAGED:
+                {
+                    Damageable.DamageMessage damageData = (Damageable.DamageMessage)data;
+
+                    OnPlayerDamage(1, _playerTransfrom.position);
+                }
+                break;
+            case MessageType.DEAD:
+                {
+                    Damageable.DamageMessage damageData = (Damageable.DamageMessage)data;
+
+                    OnPlayerDeath(1, _playerTransfrom.position);
+                }
+                break;
+        }
     }
 
     private IEnumerator WebRequest(DataToSend dataToSend)
     {
         WWWForm form = dataToSend.GetForm();
+
+        string formDataString = Encoding.UTF8.GetString(form.data);
+
+        Debug.Log("DATA: " + formDataString);
+
         UnityWebRequest www = UnityWebRequest.Post(dataToSend.Url, form);
 
         yield return www.SendWebRequest();
@@ -181,22 +255,33 @@ public class ServerActionsSerialize : MonoBehaviour
         StartCoroutine(WebRequest(_sessionEnd));
     }
 
-    private void OnPlayerMoving(int level, float positionX, float positionY, float positionZ)
+    private void OnPlayerMoving(int level, Vector3 position)
     {
         DateTime dateTime = DateTime.Now;
-        _events = new Events("Position", level, positionX, positionY, positionZ, (int)_sessionStart.ID, dateTime, _step, EventPositionSuccessfully);
-        
+        _events = new Events("Position", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventPositionSuccessfully);
+
         _step++;
-        
+
         StartCoroutine(WebRequest(_events));
     }
 
-    private void OnPlayerDeath(int level, float positionX, float positionY, float positionZ)
+    private void OnPlayerDeath(int level, Vector3 position)
     {
         DateTime dateTime = DateTime.Now;
 
-        _events = new Events("Death", level, positionX, positionY, positionZ, (int) _sessionStart.ID, dateTime, _step, EventDeathSuccessfully);
+        _events = new Events("Death", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventDeathSuccessfully);
 
+        StartCoroutine(WebRequest(_events));
+        //_step++;
+    }
+
+    private void OnPlayerDamage(int level, Vector3 position)
+    {
+        DateTime dateTime = DateTime.Now;
+
+        _events = new Events("Damage", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventDamageSuccessfully);
+
+        StartCoroutine(WebRequest(_events));
         //_step++;
     }
 
@@ -222,7 +307,13 @@ public class ServerActionsSerialize : MonoBehaviour
 
     private void EventDeathSuccessfully(UnityWebRequest www)
     {
-        Debug.Log("Event Position successfully: " + www.downloadHandler.text);
+        Debug.Log("Event Death successfully: " + www.downloadHandler.text);
+        //Callback
+    }
+
+    private void EventDamageSuccessfully(UnityWebRequest www)
+    {
+        Debug.Log("Event Damage successfully: " + www.downloadHandler.text);
         //Callback
     }
 }
