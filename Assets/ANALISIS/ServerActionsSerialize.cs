@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 
 public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
 {
-    private class DataToSend
+    public class DataToSend
     {
         public string Url { get { return _url; } }
         protected string _url = "citmalumnes.upc.es/~robertri/RAW.php";
@@ -156,7 +156,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
 
     private float _moveCountDown = 2;
 
-    delegate void ActionSuccesfull(UnityWebRequest www);
+    public delegate void ActionSuccesfull(UnityWebRequest www);
 
     private void Start()
     {
@@ -216,7 +216,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
         }
     }
 
-    private IEnumerator WebRequest(DataToSend dataToSend)
+    public IEnumerator WebRequest(DataToSend dataToSend)
     {
         WWWForm form = dataToSend.GetForm();
 

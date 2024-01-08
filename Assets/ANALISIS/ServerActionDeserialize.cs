@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UIElements;
+using static ServerActionsSerialize;
 
 public class ServerActionDeserialize : MonoBehaviour
 {
@@ -60,10 +63,13 @@ public class ServerActionDeserialize : MonoBehaviour
             _session_id = session_id;
             _start_datetime = start_datetime;
             _end_datetime = end_datetime;
+
+            
         }
     }
 
     public List<Session> _sessions;
+
 
     private void Awake()
     {
@@ -78,22 +84,29 @@ public class ServerActionDeserialize : MonoBehaviour
     public void LoadSessions()
     {
         string url = "citmalumnes.upc.es/~robertri/Select_All_Sessions.php";
+
+        StartCoroutine(SendRequest(url));
     }
 
-    //private IEnumerator WebRequest(DataToSend dataToSend)
-    //{
-    //    WWWForm form = dataToSend.GetForm();
-    //    UnityWebRequest www = UnityWebRequest.Post(dataToSend.Url, form);
+    private IEnumerator SendRequest(string url)
+    {
+        using (UnityWebRequest www = UnityWebRequest.Get(url))
+        {
+            yield return www.SendWebRequest();
 
-    //    yield return www.SendWebRequest();
+            if (www.result == UnityWebRequest.Result.ConnectionError)
+            {
+                Debug.Log("Error: " + www.error);
+            }
+            else
+            {
+                Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
+            }
+        }
+    }
 
-    //    if (www.result == UnityWebRequest.Result.ConnectionError)
-    //        Debug.Log(www.error);
-    //    else
-    //        dataToSend.onAccionSuccesfull?.Invoke(www);
-    //}
-
-    public void LoadAllSessionsSuccessfully(UnityWebRequest www)
+    //Callbacks
+    private void LoadAllSessionsSuccessfully(UnityWebRequest www)
     {
         Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
         

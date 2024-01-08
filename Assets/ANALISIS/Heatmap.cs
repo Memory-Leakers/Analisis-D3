@@ -11,10 +11,17 @@ public class Heatmap : EditorWindow
     bool myBool = true;
     float myFloat = 1.23f;
 
+    ServerActionDeserialize _data;
+
     [MenuItem("Window/Heatmap   ")]
     private static void HeatmapMenuItem()
     {
         EditorWindow.GetWindow(typeof(Heatmap));
+    }
+
+    private void OnEnable()
+    {
+        _data = new ServerActionDeserialize();
     }
 
     private void OnGUI()
@@ -30,6 +37,7 @@ public class Heatmap : EditorWindow
         if (GUILayout.Button("Load"))
         {
             Debug.Log("Loading data!");
+            _data.LoadSessions();
         }
     }
 }

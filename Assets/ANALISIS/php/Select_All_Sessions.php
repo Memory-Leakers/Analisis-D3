@@ -6,13 +6,28 @@
 			die("Connection failed: " . $mysqli->connect_error);
 		}
 		
-		if ($_SERVER["REQUEST_METHOD"] == "POST")
+		if ($_SERVER["REQUEST_METHOD"] == "GET")
 		{		
 			$sql = "SELECT * FROM Sessions;";
 				
 			if ($mysqli->query($sql) === TRUE) 
 			{
-				echo $mysqli->insert_id;	
+				if ($mysqli->num_rows > 0) 
+				{
+					// Fetch each row and echo the data
+					//while ($row = $mysqli->fetch_assoc()) 
+					//{
+					//	echo "Session ID: " . $row["Id"] . ", Start: " . $row["start_datetime"] . ", End: " . $row["end_datetime"] . "<br>";
+					//}
+					$row = $mysqli->fetch_assoc();
+					
+						echo "Session ID: " . $row["Id"] . ", Start: " . $row["start_datetime"] . ", End: " . $row["end_datetime"] . "<br>";
+					
+				} 
+				else 
+				{
+					echo "No rows found";
+				}	
 			} 
 			else 
 			{
