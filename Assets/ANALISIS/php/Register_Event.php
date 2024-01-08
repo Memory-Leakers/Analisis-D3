@@ -13,11 +13,11 @@
 			$Position_X = $_POST['Position_X'];
 			$Position_Y = $_POST['Position_Y'];
 			$Position_Z = $_POST['Position_Z'];
-			$Session_id = $_Post['Session_id'];
+			$Session_id = $_POST['Session_id'];
 			$Date = $_POST['Date'];
-			$Step = $_POST['Step']
+			$Step = $_POST['Step'];
 				
-			$sql = "INSERT INTO Events (Type, Level, Position_X, Position_Y, Position_Z, Session_id, date, step) VALUES ('$Type', '$Level', '$Position_X', '$Position_Y', '$Position_Z', '$Session_id', '$Date', '$Step');";
+			$sql = "INSERT INTO Events (Type, Level, Position_X, Position_Y, Position_Z, Session_id, date, step) VALUES ('$Type', '$Level', '$Position_X', '$Position_Y', '$Position_Z', '$Session_id', '$Date', '$Step')";
 				
 			if ($mysqli->query($sql) === TRUE) 
 			{
