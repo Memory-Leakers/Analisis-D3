@@ -1,14 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using System.Net.NetworkInformation;
+using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.UIElements;
+using static ServerActionDeserialize;
 using static ServerActionsSerialize;
 
-public class ServerActionDeserialize : MonoBehaviour
+public class ServerActionDeserialize
 {
+    [Serializable]
     public class LoadEvent
     {
         // Getter/Setter
@@ -44,6 +47,7 @@ public class ServerActionDeserialize : MonoBehaviour
         }
     }
 
+    [Serializable]
     public class Session
     {
         //Getter/Setter
@@ -56,7 +60,7 @@ public class ServerActionDeserialize : MonoBehaviour
         private readonly DateTime _start_datetime;
         private readonly DateTime _end_datetime;
 
-        public List<LoadEvent> events;
+        public LoadEvent[] events;
 
         public Session(int session_id, DateTime start_datetime, DateTime end_datetime)
         {
@@ -66,14 +70,28 @@ public class ServerActionDeserialize : MonoBehaviour
 
             
         }
+
+        //UI
+        public bool active = false;
+        public void OnGUI()
+        {
+            EditorGUILayout.BeginHorizontal();
+            active = EditorGUILayout.Toggle("", active);
+            GUILayout.Label(Session_id.ToString());
+            GUILayout.Label(Start_datetime.ToString());
+            GUILayout.Label(End_datetime.ToString());
+            EditorGUILayout.EndHorizontal();
+        }
     }
 
     public List<Session> _sessions;
 
-
-    private void Awake()
+    private void Update()
     {
-        _sessions = new List<Session>();
+        if (Input.GetKeyDown(KeyCode.F10)) 
+        {
+            LoadSessions();
+        }
     }
 
     public void LoadData()
@@ -83,32 +101,159 @@ public class ServerActionDeserialize : MonoBehaviour
 
     public void LoadSessions()
     {
+        _sessions = null;
         string url = "citmalumnes.upc.es/~robertri/Select_All_Sessions.php";
 
-        StartCoroutine(SendRequest(url));
+        if (this != null)
+        {
+            CoroutineRunner.instance.StartCoroutine(SendGetRequest(url));
+        }
+        else Debug.LogError("MonoBehaviour instance is null");
     }
 
-    private IEnumerator SendRequest(string url)
+    public void LoadEvents()
     {
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
-        {
-            yield return www.SendWebRequest();
+        string url = "citmalumnes.upc.es/~robertri/Select_Events.php";
+        List<int> ids = new List<int>();
 
-            if (www.result == UnityWebRequest.Result.ConnectionError)
+        foreach (Session s in _sessions)
+        {
+            if (s.active)
             {
-                Debug.Log("Error: " + www.error);
+                ids.Add(s.Session_id);
             }
-            else
-            {
-                Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
-            }
+        }
+
+
+        string stringIds = string.Join(",", ids);
+
+        if (this != null)
+        {
+            CoroutineRunner.instance.StartCoroutine(SendEventPostRequest(url, stringIds));
+        }
+        else Debug.LogError("MonoBehaviour instance is null");
+    }
+
+    private IEnumerator SendGetRequest(string url)
+    {
+        UnityWebRequest www = UnityWebRequest.Get(url);
+
+        yield return www.SendWebRequest();
+
+        if (www.result == UnityWebRequest.Result.ConnectionError)
+            Debug.Log(www.error);
+        else
+        {
+            Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
+            LoadAllSessionsSuccessfully(www);
+        }
+            
+    }
+
+    private IEnumerator SendEventPostRequest(string url, string ids)
+    {
+        WWWForm form = new WWWForm();
+
+        form.AddField("Ids", ids);
+
+        UnityWebRequest www = UnityWebRequest.Post(url, form);
+
+        yield return www.SendWebRequest();
+
+        if (www.result == UnityWebRequest.Result.ConnectionError)
+            Debug.Log(www.error);
+        else
+        {
+            Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
+            //LoadAllSessionsSuccessfully(www);
         }
     }
 
     //Callbacks
     private void LoadAllSessionsSuccessfully(UnityWebRequest www)
-    {
-        Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
-        
+    {       
+        string aux = www.downloadHandler.text;
+
+        _sessions = ParseSessions(aux);
+
+
+        Debug.Log("Successfully loaded sessions: "+ _sessions.Count);
     }
+
+    #region Parser
+    private List<Session> ParseSessions(string jsonData)
+    {
+        List<Session> sessions = new List<Session>();
+
+        // Split the JSON array into individual objects
+        string[] sessionObjects = jsonData.Split(new[] { "},{" }, StringSplitOptions.None);
+
+        foreach (string sessionObject in sessionObjects)
+        {
+            // Remove leading and trailing square brackets
+            string cleanedObject = sessionObject.Trim('[', ']');
+
+            // Split the object into key-value pairs
+            string[] keyValuePairs = cleanedObject.Split(',');
+
+            // Extract values for each key
+            int session_id = GetInt(keyValuePairs, "_session_id");
+            DateTime start_datetime = GetDateTime(keyValuePairs, "_start_datetime");
+            DateTime end_datetime = GetDateTime(keyValuePairs, "_end_datetime");
+
+            sessions.Add(new Session((int) session_id, start_datetime, end_datetime));
+        }
+
+        return sessions;
+    }
+
+    private string GetString(string[] keyValuePairs, string key)
+    {
+        foreach (string pair in keyValuePairs)
+        {
+            string[] keyValue = pair.Split(':');
+
+            if (keyValue.Length == 2 && keyValue[0].Contains(key))
+            {
+                return keyValue[1].Trim('\"', ' ', '\t', '\n', '\r');
+            }
+        }
+
+        return null; 
+    }
+
+    private int GetInt(string[] keyValuePairs, string key)
+    {
+        string aux = GetString(keyValuePairs, key);
+        if (aux != null)
+        {
+            return int.Parse(aux);
+        }
+
+        return -1;
+    }
+
+    private DateTime GetDateTime(string[] keyValuePairs, string key)
+    {
+        string aux = ""; GetString(keyValuePairs, key);
+        foreach (string pair in keyValuePairs)
+        {
+            string[] keyValue = pair.Split(':', 2);
+            if (keyValue.Length == 2 && keyValue[0].Contains(key))
+            {
+                aux = keyValue[1].Trim('\"', ' ', '\t', '\n', '\r');
+                break;
+            }
+        }
+
+        if (aux != null)
+        {
+            DateTime dateTime;
+            DateTime.TryParseExact(aux, "yyyy-MM-dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out dateTime);
+            return dateTime;
+        }
+
+        return DateTime.MinValue;
+    }
+    #endregion
 }

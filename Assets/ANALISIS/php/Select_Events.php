@@ -8,8 +8,9 @@
 		
 	if ($_SERVER["REQUEST_METHOD"] == "GET")
 	{		
-		$sql = "SELECT * FROM Sessions;";
-			
+		$Ids = $_POST["Ids"];
+		
+		$sql = "SELECT * FROM Events WHERE Session_id IN ('$Ids')";
 			
 		$result =  $mysqli->query($sql);
 		if ($result) 
@@ -22,10 +23,13 @@
 				while ($row = $result->fetch_assoc()) 
 				{
 					$data[] = array(
+						"Id" => $row["Id"],
+						"Type" => $row["Type"],
+						"Level" => $row["Level"],
+						"Position_X" => $row["Position_X"],
 						"_session_id" => $row["Id"],
 						"_start_datetime" => $row["start_datetime"],
-						"_end_datetime" => $row["end_datetime"],
-						"events" => array()
+						"_end_datetime" => $row["end_datetime"]
 					);
 				}
 				echo json_encode($data);
