@@ -18,7 +18,7 @@
 			if ($num_rows > 0)
 			{
 				$data = array();
-				// Fetch each row and echo the data
+
 				while ($row = $result->fetch_assoc()) 
 				{
 					$data[] = array(

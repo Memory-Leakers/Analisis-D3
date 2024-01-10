@@ -22,6 +22,7 @@ public class ServerActionDeserialize
         public float PositionY { get { return _positionY; } }
         public float PositionZ { get { return _positionZ; } }
         public int Session_Id { get { return _session_id; } }
+        public DateTime Date { get { return _date; } }
         public int Step { get { return _step; } }
 
         // Parameters
@@ -32,9 +33,10 @@ public class ServerActionDeserialize
         private readonly float _positionY;
         private readonly float _positionZ;
         private readonly int _session_id;
+        private readonly DateTime _date;
         private readonly int _step;
 
-        public LoadEvent (int id, string type, int level, float positionX, float positionY, float positionZ, int session_id, int step)
+        public LoadEvent (int id, string type, int level, float positionX, float positionY, float positionZ, int session_id, DateTime date, int step)
         {
             _id = id;
             _type = type;
@@ -43,6 +45,7 @@ public class ServerActionDeserialize
             _positionY = positionY;
             _positionZ = positionZ;
             _session_id = session_id;
+            _date = date;
             _step = step;
         }
     }
@@ -60,7 +63,7 @@ public class ServerActionDeserialize
         private readonly DateTime _start_datetime;
         private readonly DateTime _end_datetime;
 
-        public LoadEvent[] events;
+        public List<LoadEvent> events = new List<LoadEvent>();
 
         public Session(int session_id, DateTime start_datetime, DateTime end_datetime)
         {
@@ -81,6 +84,39 @@ public class ServerActionDeserialize
             GUILayout.Label(Start_datetime.ToString());
             GUILayout.Label(End_datetime.ToString());
             EditorGUILayout.EndHorizontal();
+
+            //Show events
+            if (events.Count > 0) 
+            {
+                
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Label("ID", EditorStyles.boldLabel);
+                GUILayout.Label("Type", EditorStyles.boldLabel);
+                GUILayout.Label("Level", EditorStyles.boldLabel);
+                GUILayout.Label("Position_X", EditorStyles.boldLabel);
+                GUILayout.Label("Position_Y", EditorStyles.boldLabel);
+                GUILayout.Label("Position_Z", EditorStyles.boldLabel);
+                GUILayout.Label("Session_id", EditorStyles.boldLabel);
+                GUILayout.Label("Date", EditorStyles.boldLabel);
+                GUILayout.Label("Step", EditorStyles.boldLabel);
+                EditorGUILayout.EndHorizontal();
+                foreach (LoadEvent e in events) 
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.Label(e.Id.ToString());
+                    GUILayout.Label(e.Type);
+                    GUILayout.Label(e.Level.ToString());
+                    GUILayout.Label(e.PositionX.ToString());
+                    GUILayout.Label(e.PositionY.ToString());
+                    GUILayout.Label(e.PositionZ.ToString());
+                    GUILayout.Label(e.Session_Id.ToString());
+                    GUILayout.Label(e.Date.ToString());
+                    GUILayout.Label(e.Step.ToString());
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                
+            }
         }
     }
 
@@ -164,8 +200,8 @@ public class ServerActionDeserialize
             Debug.Log(www.error);
         else
         {
-            Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
-            //LoadAllSessionsSuccessfully(www);
+            //Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
+            LoadEventsSuccessfully(www);
         }
     }
 
@@ -178,6 +214,15 @@ public class ServerActionDeserialize
 
 
         Debug.Log("Successfully loaded sessions: "+ _sessions.Count);
+    }
+
+    private void LoadEventsSuccessfully(UnityWebRequest www)
+    {
+        string aux = www.downloadHandler.text;
+
+        ParseEvents(aux);
+
+        Debug.Log("Successfully loaded events!");
     }
 
     #region Parser
@@ -207,6 +252,53 @@ public class ServerActionDeserialize
         return sessions;
     }
 
+    private void ParseEvents(string jsonData)
+    {
+        List<LoadEvent> events = new List<LoadEvent>();
+
+        // Split the JSON array into individual objects
+        string[] sessionObjects = jsonData.Split(new[] { "},{" }, StringSplitOptions.None);
+
+        foreach (string sessionObject in sessionObjects)
+        {
+            // Remove leading and trailing square brackets
+            string cleanedObject = sessionObject.Trim('[', ']');
+
+            // Split the object into key-value pairs
+            string[] keyValuePairs = cleanedObject.Split(',');
+
+            // Extract values for each key
+            int id = GetInt(keyValuePairs, "Id");
+            string type = GetString(keyValuePairs, "Type");
+            int level = GetInt(keyValuePairs, "Level");
+            float positionX = GetFloat(keyValuePairs, "Position_X");
+            float positionY = GetFloat(keyValuePairs, "Position_Y");
+            float positionZ = GetFloat(keyValuePairs, "Position_Z");
+            int session_id = GetInt(keyValuePairs, "Session_id");
+            DateTime date = GetDateTime(keyValuePairs, "date");
+            int step = GetInt(keyValuePairs, "step");
+
+            events.Add(new LoadEvent(id, type, level, positionX, positionY, positionZ, session_id, date, step));
+
+            //Debug.Log("Id -> " + id + " Type-> " + type + " level-> " + level + " positionX-> " + positionX + " positionY-> " + positionY + " positionZ-> " + positionZ + " session_id-> " + session_id + " date->" + date + " step-> " + step);
+        }
+
+        foreach (Session s in _sessions)
+        {
+            s.events.Clear();
+
+            if (!s.active) continue;
+
+            foreach (LoadEvent e in events)
+            {
+                if (s.Session_id == e.Session_Id)
+                {
+                    s.events.Add(e);
+                }
+            }
+        }
+    }
+
     private string GetString(string[] keyValuePairs, string key)
     {
         foreach (string pair in keyValuePairs)
@@ -215,7 +307,7 @@ public class ServerActionDeserialize
 
             if (keyValue.Length == 2 && keyValue[0].Contains(key))
             {
-                return keyValue[1].Trim('\"', ' ', '\t', '\n', '\r');
+                return keyValue[1].Trim('\"', ' ', '\t', '\n', '\r', '}', ']');
             }
         }
 
@@ -225,6 +317,7 @@ public class ServerActionDeserialize
     private int GetInt(string[] keyValuePairs, string key)
     {
         string aux = GetString(keyValuePairs, key);
+
         if (aux != null)
         {
             return int.Parse(aux);
@@ -233,9 +326,22 @@ public class ServerActionDeserialize
         return -1;
     }
 
+    private float GetFloat(string[] keyValuePairs, string key)
+    {
+        string aux = GetString(keyValuePairs, key);
+
+        if (aux != null)
+        {
+            return float.Parse(aux, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return -1;
+    }
+
     private DateTime GetDateTime(string[] keyValuePairs, string key)
     {
-        string aux = ""; GetString(keyValuePairs, key);
+        string aux = ""; 
+
         foreach (string pair in keyValuePairs)
         {
             string[] keyValue = pair.Split(':', 2);

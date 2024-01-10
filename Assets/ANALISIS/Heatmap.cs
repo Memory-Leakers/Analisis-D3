@@ -53,6 +53,11 @@ public class Heatmap : EditorWindow
         ReloadDataButton();
 
         SessionTable();
+
+        if (GUILayout.Button("Load events"))
+        {
+            _data.LoadEvents();
+        }
     }
 
     private void SessionTable()

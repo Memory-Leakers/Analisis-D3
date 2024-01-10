@@ -6,12 +6,13 @@
 		die("Connection failed: " . $mysqli->connect_error);
 	}
 		
-	if ($_SERVER["REQUEST_METHOD"] == "GET")
+	if ($_SERVER["REQUEST_METHOD"] == "POST")
 	{		
 		$Ids = $_POST["Ids"];
 		
-		$sql = "SELECT * FROM Events WHERE Session_id IN ('$Ids')";
-			
+		$sql = "SELECT * FROM Events WHERE Session_id IN ('$Ids');";
+		$sql = str_replace("'", "", $sql);
+		
 		$result =  $mysqli->query($sql);
 		if ($result) 
 		{
@@ -19,7 +20,7 @@
 			if ($num_rows > 0)
 			{
 				$data = array();
-				// Fetch each row and echo the data
+
 				while ($row = $result->fetch_assoc()) 
 				{
 					$data[] = array(
@@ -27,9 +28,11 @@
 						"Type" => $row["Type"],
 						"Level" => $row["Level"],
 						"Position_X" => $row["Position_X"],
-						"_session_id" => $row["Id"],
-						"_start_datetime" => $row["start_datetime"],
-						"_end_datetime" => $row["end_datetime"]
+						"Position_Y" => $row["Position_Y"],
+						"Position_Z" => $row["Position_Z"],
+						"Session_id" => $row["Session_id"],
+						"date" => $row["date"],
+						"step" => $row["step"]
 					);
 				}
 				echo json_encode($data);
@@ -45,3 +48,5 @@
 		}
 	}
 ?>
+
+
