@@ -11,6 +11,16 @@ using static ServerActionsSerialize;
 
 public class ServerActionDeserialize
 {
+
+    private static ServerActionDeserialize _instance = null;
+
+    public static ServerActionDeserialize Instance()
+    {
+        if (_instance == null) _instance = new ServerActionDeserialize();
+
+        return _instance;
+    }
+
     [Serializable]
     public class LoadEvent
     {
@@ -58,10 +68,14 @@ public class ServerActionDeserialize
         public DateTime Start_datetime { get { return _start_datetime; } }
         public DateTime End_datetime { get { return _end_datetime; } }
 
+        public Color Color { get { return _color; } }
+
         // Parameters
         private readonly int _session_id;
         private readonly DateTime _start_datetime;
         private readonly DateTime _end_datetime;
+
+        private Color _color;
 
         public List<LoadEvent> events = new List<LoadEvent>();
 
@@ -71,7 +85,7 @@ public class ServerActionDeserialize
             _start_datetime = start_datetime;
             _end_datetime = end_datetime;
 
-            
+            _color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
         }
 
         //UI
