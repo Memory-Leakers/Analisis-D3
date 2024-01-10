@@ -194,7 +194,7 @@ public class ServerActionDeserialize
             Debug.Log(www.error);
         else
         {
-            Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
+            //Debug.Log("Load all sessions successfully" + www.downloadHandler.text);
             LoadAllSessionsSuccessfully(www);
         }
             

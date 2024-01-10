@@ -8,22 +8,16 @@ using static UnityEditor.Progress;
 
 public class HeatmapMenu : EditorWindow
 {
-    string myString = "Hello World";
-    bool groupEnabled = false;
-    bool myBool = true;
-    float myFloat = 1.23f;
-
     private Vector2 scrollPosition;
 
     ServerActionDeserialize _data;
     GameObject _heatmap;
+    HeatmapObject _heatmapComponent;
 
     bool _useAllSessions = false;
-    private int selectedOption = 0;
-    private string[] options = { "All data", "Option 2", "Option 3" };
-
-
-
+    private int heatmapTypeSelectedOption = 0;
+    
+    
 
     [MenuItem("Window/Heatmap")]
     private static void HeatmapMenuItem()
@@ -47,25 +41,67 @@ public class HeatmapMenu : EditorWindow
 
     private void OnGUI()
     {
-        //GUILayout.Label("Select an option:", EditorStyles.boldLabel);
-
-        //selectedOption = EditorGUILayout.Popup(selectedOption, options);
-
-        //if (GUILayout.Button("Load data from "))
-        //{
-        //    ExecuteSelectedOption();
-        //}
-
+        // Reloads the session data from the ddbb
         ReloadDataButton();
 
+        // Sessions UI
         SessionTable();
 
-        if (GUILayout.Button("Load events"))
+        //Slider
+        GUILayout.Label("Heatmap Color Weight:", EditorStyles.boldLabel);
+        if (_heatmapComponent != null)
         {
-            _data.LoadEvents();
-
-            CreateHeatmapObject();
+            _heatmapComponent.heatWeight = EditorGUILayout.Slider(_heatmapComponent.heatWeight, 0.01f, 1.0f);
         }
+
+        // Filters for the type of heatmap
+        HeatmapTypesUI();
+
+        // Filters fro heatmap (ONLY WORK WITH HEATMAP TYPE 'HEAT')
+        EventTypeSelectorUI();
+
+        if (GUILayout.Button("Load"))
+        {
+            CreateHeatmap();
+        }
+    }
+
+    private void CreateHeatmap()
+    {
+        _data.LoadEvents();
+
+        switch (heatmapTypeSelectedOption)
+        {
+            case 0:
+                Debug.Log("Executing Pathing Heatmap");
+                CreateHeatmapObject(HeatmapType.PATHING);
+                break;
+            case 1:
+                Debug.Log("Executing Heat Heatmap");
+                CreateHeatmapObject(HeatmapType.HEAT);
+                break;
+            case 2:
+                Debug.Log("Executing Option 3");
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void CreateHeatmapObject(HeatmapType type)
+    {
+        if (_heatmap != null)
+        {
+            _heatmapComponent._heatmapType = type;
+            return;
+        }
+
+        _heatmap = new GameObject();
+        _heatmap.name = "Heatmap";
+        _heatmapComponent = _heatmap.AddComponent<HeatmapObject>();
+
+        _heatmapComponent.Initialize();
+        _heatmapComponent._heatmapType = type;
     }
 
     private void SessionTable()
@@ -88,7 +124,6 @@ public class HeatmapMenu : EditorWindow
             if (GUILayout.Button("", buttonStyle))
             {
                 _useAllSessions = !_useAllSessions;
-
 
                 turnAll = true;
             }
@@ -122,25 +157,6 @@ public class HeatmapMenu : EditorWindow
         }
     }
 
-    private void ExecuteSelectedOption()
-    {
-        // Add your logic for each option here
-        switch (selectedOption)
-        {
-            case 0:
-                Debug.Log("Executing Option 1");
-                break;
-            case 1:
-                Debug.Log("Executing Option 2");
-                break;
-            case 2:
-                Debug.Log("Executing Option 3");
-                break;
-            default:
-                break;
-        }
-    }
-
     private void ReloadDataButton()
     {
         GUILayout.BeginHorizontal();
@@ -156,14 +172,18 @@ public class HeatmapMenu : EditorWindow
         GUILayout.EndHorizontal();
     }
 
-    private void CreateHeatmapObject()
+    private void HeatmapTypesUI()
     {
-        if (_heatmap != null) return;
+        GUILayout.Label("Heatmap type:", EditorStyles.boldLabel);
 
-        _heatmap = new GameObject();
-        _heatmap.name = "Heatmap";
-        _heatmap.AddComponent<HeatmapObject>();
+        string[] options = { "Pathing", "Heat", "Option 3" };
+        heatmapTypeSelectedOption = EditorGUILayout.Popup(heatmapTypeSelectedOption, options);
+    }
 
-        _heatmap.GetComponent<HeatmapObject>().Initialize();
+    private void EventTypeSelectorUI()
+    {
+        if (heatmapTypeSelectedOption != 1 || _heatmapComponent == null) return;
+
+        _heatmapComponent.eventTypeSelectedOptions = EditorGUILayout.MaskField("Event Types", _heatmapComponent.eventTypeSelectedOptions, _heatmapComponent.eventTypeOptions);
     }
 }
