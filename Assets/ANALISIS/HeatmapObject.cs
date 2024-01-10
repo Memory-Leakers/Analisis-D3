@@ -45,6 +45,9 @@ public class HeatmapObject : MonoBehaviour
     private float lineThickness = 10.0f;
     public float heatWeight = 0.05f;
 
+    //Data
+    public List<Heat> heatList = new List<Heat>();
+
     public void Initialize()
     {
         if (_data == null)
@@ -136,7 +139,7 @@ public class HeatmapObject : MonoBehaviour
     private void Heat()
     {
         List<LoadEvent> pool = new List<LoadEvent>();
-        List<Heat> heatList = new List<Heat>();
+        heatList.Clear();
 
         foreach (var s in _data._sessions)
         {

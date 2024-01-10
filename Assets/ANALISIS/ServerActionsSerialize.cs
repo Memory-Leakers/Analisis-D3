@@ -201,15 +201,11 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
         {
             case MessageType.DAMAGED:
                 {
-                    Damageable.DamageMessage damageData = (Damageable.DamageMessage)data;
-
                     OnPlayerDamage(1, _playerTransfrom.position);
                 }
                 break;
             case MessageType.DEAD:
                 {
-                    Damageable.DamageMessage damageData = (Damageable.DamageMessage)data;
-
                     OnPlayerDeath(1, _playerTransfrom.position);
                 }
                 break;

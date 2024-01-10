@@ -57,7 +57,7 @@ public class HeatmapMenu : EditorWindow
         // Filters for the type of heatmap
         HeatmapTypesUI();
 
-        // Filters fro heatmap (ONLY WORK WITH HEATMAP TYPE 'HEAT')
+        // Filters for heatmap (ONLY WORK WITH HEATMAP TYPE 'HEAT')
         EventTypeSelectorUI();
 
         if (GUILayout.Button("Load"))
@@ -185,5 +185,7 @@ public class HeatmapMenu : EditorWindow
         if (heatmapTypeSelectedOption != 1 || _heatmapComponent == null) return;
 
         _heatmapComponent.eventTypeSelectedOptions = EditorGUILayout.MaskField("Event Types", _heatmapComponent.eventTypeSelectedOptions, _heatmapComponent.eventTypeOptions);
+
+        GUILayout.Label("Heat pool: " + _heatmapComponent.heatList.Count, EditorStyles.boldLabel);
     }
 }
