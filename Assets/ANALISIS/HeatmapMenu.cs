@@ -80,9 +80,6 @@ public class HeatmapMenu : EditorWindow
                 Debug.Log("Executing Heat Heatmap");
                 CreateHeatmapObject(HeatmapType.HEAT);
                 break;
-            case 2:
-                Debug.Log("Executing Option 3");
-                break;
             default:
                 break;
         }
@@ -176,7 +173,7 @@ public class HeatmapMenu : EditorWindow
     {
         GUILayout.Label("Heatmap type:", EditorStyles.boldLabel);
 
-        string[] options = { "Pathing", "Heat", "Option 3" };
+        string[] options = { "Pathing", "Heat"};
         heatmapTypeSelectedOption = EditorGUILayout.Popup(heatmapTypeSelectedOption, options);
     }
 
@@ -186,6 +183,6 @@ public class HeatmapMenu : EditorWindow
 
         _heatmapComponent.eventTypeSelectedOptions = EditorGUILayout.MaskField("Event Types", _heatmapComponent.eventTypeSelectedOptions, _heatmapComponent.eventTypeOptions);
 
-        GUILayout.Label("Heat pool: " + _heatmapComponent.heatList.Count, EditorStyles.boldLabel);
+        GUILayout.Label("Total number of analized data: " + _heatmapComponent.heatList.Count, EditorStyles.boldLabel);
     }
 }

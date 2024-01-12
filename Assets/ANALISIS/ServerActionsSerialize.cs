@@ -300,7 +300,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
     {
         DateTime dateTime = DateTime.Now;
 
-        _events = new Events("DeathInWater", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventDeathInWaterSuccessfully);
+        _events = new Events("Death", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventDeathInWaterSuccessfully);
 
         StartCoroutine(WebRequest(_events));
         //_step++;

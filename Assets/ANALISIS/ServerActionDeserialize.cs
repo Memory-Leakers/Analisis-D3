@@ -243,19 +243,13 @@ public class ServerActionDeserialize
     private List<Session> ParseSessions(string jsonData)
     {
         List<Session> sessions = new List<Session>();
-
-        // Split the JSON array into individual objects
         string[] sessionObjects = jsonData.Split(new[] { "},{" }, StringSplitOptions.None);
 
         foreach (string sessionObject in sessionObjects)
         {
-            // Remove leading and trailing square brackets
             string cleanedObject = sessionObject.Trim('[', ']');
-
-            // Split the object into key-value pairs
             string[] keyValuePairs = cleanedObject.Split(',');
 
-            // Extract values for each key
             int session_id = GetInt(keyValuePairs, "_session_id");
             DateTime start_datetime = GetDateTime(keyValuePairs, "_start_datetime");
             DateTime end_datetime = GetDateTime(keyValuePairs, "_end_datetime");
@@ -269,19 +263,13 @@ public class ServerActionDeserialize
     private void ParseEvents(string jsonData)
     {
         List<LoadEvent> events = new List<LoadEvent>();
-
-        // Split the JSON array into individual objects
         string[] sessionObjects = jsonData.Split(new[] { "},{" }, StringSplitOptions.None);
 
         foreach (string sessionObject in sessionObjects)
         {
-            // Remove leading and trailing square brackets
             string cleanedObject = sessionObject.Trim('[', ']');
-
-            // Split the object into key-value pairs
             string[] keyValuePairs = cleanedObject.Split(',');
 
-            // Extract values for each key
             int id = GetInt(keyValuePairs, "Id");
             string type = GetString(keyValuePairs, "Type");
             int level = GetInt(keyValuePairs, "Level");
@@ -293,10 +281,9 @@ public class ServerActionDeserialize
             int step = GetInt(keyValuePairs, "step");
 
             events.Add(new LoadEvent(id, type, level, positionX, positionY, positionZ, session_id, date, step));
-
-            //Debug.Log("Id -> " + id + " Type-> " + type + " level-> " + level + " positionX-> " + positionX + " positionY-> " + positionY + " positionZ-> " + positionZ + " session_id-> " + session_id + " date->" + date + " step-> " + step);
         }
 
+        // Afegeix els events a la seva sessio
         foreach (Session s in _sessions)
         {
             s.events.Clear();

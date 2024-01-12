@@ -37,7 +37,7 @@ public class HeatmapObject : MonoBehaviour
     //Material 
 
     //Options
-    public string[] eventTypeOptions = { "Position", "Death", "Damage" };
+    public string[] eventTypeOptions = { "Position", "Death", "Damage", "Attack", "Jump", "Respawn"};
     public int eventTypeSelectedOptions = -1;
 
     //Gizmos settings
@@ -99,17 +99,25 @@ public class HeatmapObject : MonoBehaviour
     private void DrawPath(Session session)
     {
         Handles.color = session.Color;
+        int margin = 1;
 
-        for (int i = 0; i < session.events.Count - 1; i++)
+        for (int i = 0; i < session.events.Count - margin; i++)
         {
+            if (!session.events[i].Type.Equals("Position"))
+            {
+                margin++;
+                continue;
+            }
+
             Vector3 v1 = new Vector3(session.events[i].PositionX, session.events[i].PositionY, session.events[i].PositionZ);
-            Vector3 v2 = new Vector3(session.events[i + 1].PositionX, session.events[i + 1].PositionY, session.events[i + 1].PositionZ);
+            Vector3 v2 = new Vector3(session.events[i + margin].PositionX, session.events[i + margin].PositionY, session.events[i + margin].PositionZ);
 
             Handles.DrawLine(v1, v2, lineThickness);
 
             Quaternion arrowRotation = GetDirectionOnPath(v1, v2);
 
             DrawArrow(v1, arrowRotation);
+            margin = 1;
         }
     }
 
@@ -200,7 +208,6 @@ public class HeatmapObject : MonoBehaviour
 
     private void DrawHeat(List<Heat> heat)
     {
-        Debug.Log("Total Heat data-> "+heat.Count);
         foreach (Heat h in heat) 
         {
             Gizmos.color = h.Intensity;
