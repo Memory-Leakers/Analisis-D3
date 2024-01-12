@@ -166,6 +166,8 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
 
     private void OnApplicationQuit()
     {
+        // Create a Position event of the ending position.
+        OnPlayerMoving(1, _playerTransfrom.position);
         OnSessionEnd();
     }
 
@@ -351,13 +353,15 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
     {
         Debug.Log("Session Started/Created successfully: " + www.downloadHandler.text);
         _sessionStart.ID = uint.Parse(www.downloadHandler.text);
-        //CallbackEvents.On
+
+        // Create a Position event of the starting position.
+        OnPlayerMoving(1, _playerTransfrom.position); 
     }
 
     private void SessionClosedSuccessfully(UnityWebRequest www)
     {
         Debug.Log("Session Closed/Finished successfully:" + www.downloadHandler.text);
-        //Callback
+        //Callback;
     }
 
     private void EventPositionSuccessfully(UnityWebRequest www)

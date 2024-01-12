@@ -99,25 +99,28 @@ public class HeatmapObject : MonoBehaviour
     private void DrawPath(Session session)
     {
         Handles.color = session.Color;
-        int margin = 1;
+        List<LoadEvent> events = new List<LoadEvent>();
 
-        for (int i = 0; i < session.events.Count - margin; i++)
+        //Get only events for Position (the sql query has already sort them by step)
+        foreach (LoadEvent e in session.events)
         {
-            if (!session.events[i].Type.Equals("Position"))
+            if (e.Type.Equals("Position"))
             {
-                margin++;
+                events.Add(e);
                 continue;
             }
+        }
 
-            Vector3 v1 = new Vector3(session.events[i].PositionX, session.events[i].PositionY, session.events[i].PositionZ);
-            Vector3 v2 = new Vector3(session.events[i + margin].PositionX, session.events[i + margin].PositionY, session.events[i + margin].PositionZ);
+        for (int i = 0; i < events.Count - 1; i++)
+        {
+            Vector3 v1 = new Vector3(events[i].PositionX, events[i].PositionY, events[i].PositionZ);
+            Vector3 v2 = new Vector3(events[i + 1].PositionX, events[i + 1].PositionY, events[i + 1].PositionZ);
 
             Handles.DrawLine(v1, v2, lineThickness);
 
             Quaternion arrowRotation = GetDirectionOnPath(v1, v2);
 
             DrawArrow(v1, arrowRotation);
-            margin = 1;
         }
     }
 
