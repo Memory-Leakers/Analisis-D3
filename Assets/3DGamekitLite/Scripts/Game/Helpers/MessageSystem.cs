@@ -11,6 +11,9 @@ namespace Gamekit3D
             DAMAGED,
             DEAD,
             RESPAWN,
+            ATTACK,
+            DEADINWATER,
+            JUMP,
             //Add your user defined message type after
         }
 

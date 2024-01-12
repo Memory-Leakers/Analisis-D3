@@ -136,7 +136,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
             form.AddField("Step", _step);
             form.AddField("Date", RequestDate);
 
-            Debug.Log(RequestDate);
+            //Debug.Log(RequestDate);
 
             return form;
         }
@@ -151,10 +151,11 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
     private int _step = 0;
 
     private Damageable m_Damageable;
+    private PlayerController m_PlayerController;
 
     [SerializeField] private Transform _playerTransfrom;
 
-    private float _moveCountDown = 2;
+    private float _moveCountDown = 5;
 
     public delegate void ActionSuccesfull(UnityWebRequest www);
 
@@ -174,6 +175,9 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
         m_Damageable = GameObject.Find("Ellen").GetComponent<Damageable>();
         m_Damageable.onDamageMessageReceivers.Add(this);
 
+        m_PlayerController = GameObject.Find("Ellen").GetComponent<PlayerController>();
+        m_PlayerController.messageReceivers.Add(this);
+
         if (_playerTransfrom != null)
             _playerTransfrom = GameObject.Find("Ellen").GetComponent<Transform>();
     }
@@ -181,6 +185,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
     private void OnDisable()
     {
         m_Damageable.onDamageMessageReceivers.Remove(this);
+        m_PlayerController.messageReceivers.Remove(this);
     }
 
     private void Update()
@@ -189,7 +194,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
 
         if (_moveCountDown <= 0)
         {
-            _moveCountDown = 10;
+            _moveCountDown = 5;
 
             OnPlayerMoving(1, _playerTransfrom.position);
         }
@@ -207,6 +212,26 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
             case MessageType.DEAD:
                 {
                     OnPlayerDeath(1, _playerTransfrom.position);
+                }
+                break;
+            case MessageType.ATTACK:
+                {
+                    OnPlayerAttack(1, _playerTransfrom.position);
+                }
+                break;
+            case MessageType.DEADINWATER:
+                {
+                    OnPlayerDeathInWater(1, _playerTransfrom.position);
+                }
+                break;
+            case MessageType.JUMP:
+                {
+                    OnPlayerJump(1, _playerTransfrom.position);
+                }
+                break;
+            case MessageType.RESPAWN:
+                {
+                    OnPlayerRespawn(1, _playerTransfrom.position);
                 }
                 break;
         }
@@ -271,6 +296,46 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
         //_step++;
     }
 
+    private void OnPlayerDeathInWater(int level, Vector3 position)
+    {
+        DateTime dateTime = DateTime.Now;
+
+        _events = new Events("DeathInWater", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventDeathInWaterSuccessfully);
+
+        StartCoroutine(WebRequest(_events));
+        //_step++;
+    }
+
+    private void OnPlayerAttack(int level, Vector3 position)
+    {
+        DateTime dateTime = DateTime.Now;
+
+        _events = new Events("Attack", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventAttackSuccessfully);
+
+        StartCoroutine(WebRequest(_events));
+        //_step++;
+    }
+
+    private void OnPlayerJump(int level, Vector3 position)
+    {
+        DateTime dateTime = DateTime.Now;
+
+        _events = new Events("Jump", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventJumpSuccessfully);
+
+        StartCoroutine(WebRequest(_events));
+        //_step++;
+    }
+
+    private void OnPlayerRespawn(int level, Vector3 position)
+    {
+        DateTime dateTime = DateTime.Now;
+
+        _events = new Events("Respawn", level, position.x, position.y, position.z, (int)_sessionStart.ID, dateTime, _step, EventRespawnSuccessfully);
+
+        StartCoroutine(WebRequest(_events));
+        //_step++;
+    }
+
     private void OnPlayerDamage(int level, Vector3 position)
     {
         DateTime dateTime = DateTime.Now;
@@ -304,6 +369,30 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
     private void EventDeathSuccessfully(UnityWebRequest www)
     {
         Debug.Log("Event Death successfully: " + www.downloadHandler.text);
+        //Callback
+    }
+
+    private void EventDeathInWaterSuccessfully(UnityWebRequest www)
+    {
+        Debug.Log("Event Death in water successfully: " + www.downloadHandler.text);
+        //Callback
+    }
+
+    private void EventAttackSuccessfully(UnityWebRequest www)
+    {
+        Debug.Log("Event Attack successfully: " + www.downloadHandler.text);
+        //Callback
+    }
+
+    private void EventJumpSuccessfully(UnityWebRequest www)
+    {
+        Debug.Log("Event Jump successfully: " + www.downloadHandler.text);
+        //Callback
+    }
+
+    private void EventRespawnSuccessfully(UnityWebRequest www)
+    {
+        Debug.Log("Event Respawn successfully: " + www.downloadHandler.text);
         //Callback
     }
 

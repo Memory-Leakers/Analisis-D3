@@ -2,6 +2,7 @@ using UnityEngine;
 using Gamekit3D.Message;
 using System.Collections;
 using UnityEngine.XR.WSA;
+using System.Collections.Generic;
 
 namespace Gamekit3D
 {
@@ -100,6 +101,11 @@ namespace Gamekit3D
         // Tags
         readonly int m_HashBlockInput = Animator.StringToHash("BlockInput");
 
+        // Custom code
+        [Tooltip("When this gameObject is damaged, these other gameObjects are notified.")]
+        [EnforceType(typeof(Message.IMessageReceiver))]
+        public List<MonoBehaviour> messageReceivers;
+
         protected bool IsMoveInput
         {
             get { return !Mathf.Approximately(m_Input.MoveInput.sqrMagnitude, 0f); }
@@ -190,7 +196,16 @@ namespace Gamekit3D
             m_Animator.ResetTrigger(m_HashMeleeAttack);
 
             if (m_Input.Attack && canAttack)
+            {
                 m_Animator.SetTrigger(m_HashMeleeAttack);
+
+                // Custom code
+                for (var i = 0; i < messageReceivers.Count; ++i)
+                {
+                    var receiver = messageReceivers[i] as IMessageReceiver;
+                    receiver.OnReceiveMessage(MessageType.ATTACK, this, null);
+                }
+            }
 
             CalculateForwardMovement();
             CalculateVerticalMovement();
@@ -289,6 +304,13 @@ namespace Gamekit3D
                     m_VerticalSpeed = jumpSpeed;
                     m_IsGrounded = false;
                     m_ReadyToJump = false;
+
+                    // Custom code
+                    for (var i = 0; i < messageReceivers.Count; ++i)
+                    {
+                        var receiver = messageReceivers[i] as IMessageReceiver;
+                        receiver.OnReceiveMessage(MessageType.JUMP, this, null);
+                    }
                 }
             }
             else
@@ -306,7 +328,7 @@ namespace Gamekit3D
                 {
                     m_VerticalSpeed = 0f;
                 }
-                
+
                 // If Ellen is airborne, apply gravity.
                 m_VerticalSpeed -= gravity * Time.deltaTime;
             }
@@ -318,13 +340,13 @@ namespace Gamekit3D
             // Create three variables, move input local to the player, flattened forward direction of the camera and a local target rotation.
             Vector2 moveInput = m_Input.MoveInput;
             Vector3 localMovementDirection = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
-            
+
             Vector3 forward = Quaternion.Euler(0f, cameraSettings.Current.m_XAxis.Value, 0f) * Vector3.forward;
             forward.y = 0f;
             forward.Normalize();
 
             Quaternion targetRotation;
-            
+
             // If the local movement direction is the opposite of forward then the target rotation should be towards the camera.
             if (Mathf.Approximately(Vector3.Dot(localMovementDirection, Vector3.forward), -1.0f))
             {
@@ -379,7 +401,7 @@ namespace Gamekit3D
                 {
                     // The desired forward is the direction to the closest enemy.
                     resultingForward = closestForward;
-                    
+
                     // We also directly set the rotation, as we want snappy fight and orientation isn't updated in the UpdateOrientation function during an atatck.
                     transform.rotation = Quaternion.LookRotation(resultingForward);
                 }
@@ -504,7 +526,7 @@ namespace Gamekit3D
                 {
                     // ... and get the movement of the root motion rotated to lie along the plane of the ground.
                     movement = Vector3.ProjectOnPlane(m_Animator.deltaPosition, hit.normal);
-                    
+
                     // Also store the current walking surface so the correct audio is played.
                     Renderer groundRenderer = hit.collider.GetComponentInChildren<Renderer>();
                     m_CurrentWalkingSurface = groundRenderer ? groundRenderer.sharedMaterial : null;
@@ -543,7 +565,7 @@ namespace Gamekit3D
             // Send whether or not Ellen is on the ground to the animator.
             m_Animator.SetBool(m_HashGrounded, m_IsGrounded);
         }
-        
+
         // This is called by an animation event when Ellen swings her staff.
         public void MeleeAttackStart(int throwing = 0)
         {
@@ -570,7 +592,7 @@ namespace Gamekit3D
         {
             StartCoroutine(RespawnRoutine());
         }
-        
+
         protected IEnumerator RespawnRoutine()
         {
             // Wait for the animator to be transitioning from the EllenDeath state.
@@ -578,7 +600,7 @@ namespace Gamekit3D
             {
                 yield return null;
             }
-            
+
             // Wait for the screen to fade out.
             yield return StartCoroutine(ScreenFader.FadeSceneOut());
             while (ScreenFader.IsFading)
@@ -600,25 +622,32 @@ namespace Gamekit3D
             {
                 Debug.LogError("There is no Checkpoint set, there should always be a checkpoint set. Did you add a checkpoint at the spawn?");
             }
-            
+
             // Set the Respawn parameter of the animator.
             m_Animator.SetTrigger(m_HashRespawn);
-            
+
             // Start the respawn graphic effects.
             spawn.StartEffect();
-            
+
             // Wait for the screen to fade in.
             // Currently it is not important to yield here but should some changes occur that require waiting until a respawn has finished this will be required.
             yield return StartCoroutine(ScreenFader.FadeSceneIn());
-            
+
             m_Damageable.ResetDamage();
+
+            // Custom code
+            for (var i = 0; i < messageReceivers.Count; ++i)
+            {
+                var receiver = messageReceivers[i] as IMessageReceiver;
+                receiver.OnReceiveMessage(MessageType.RESPAWN, this, null);
+            }
         }
 
         // Called by a state machine behaviour on Ellen's animator controller.
         public void RespawnFinished()
         {
             m_Respawning = false;
-            
+
             //we set the damageable invincible so we can't get hurt just after being respawned (feel like a double punitive)
             m_Damageable.isInvulnerable = false;
         }
@@ -637,7 +666,7 @@ namespace Gamekit3D
                 case MessageType.DEAD:
                     {
                         Damageable.DamageMessage damageData = (Damageable.DamageMessage)data;
-                        Die(damageData);
+                        Die(damageData, false);
                     }
                     break;
             }
@@ -670,13 +699,23 @@ namespace Gamekit3D
         }
 
         // Called by OnReceiveMessage and by DeathVolumes in the scene.
-        public void Die(Damageable.DamageMessage damageMessage)
+        public void Die(Damageable.DamageMessage damageMessage, bool deadByVolume = true)
         {
             m_Animator.SetTrigger(m_HashDeath);
             m_ForwardSpeed = 0f;
             m_VerticalSpeed = 0f;
             m_Respawning = true;
             m_Damageable.isInvulnerable = true;
+
+            // Custom code
+            if (deadByVolume)
+            {
+                for (var i = 0; i < messageReceivers.Count; ++i)
+                {
+                    var receiver = messageReceivers[i] as IMessageReceiver;
+                    receiver.OnReceiveMessage(MessageType.DEADINWATER, this, null);
+                }
+            }
         }
     }
 }
