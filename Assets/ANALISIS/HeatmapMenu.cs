@@ -22,7 +22,7 @@ public class HeatmapMenu : EditorWindow
     [MenuItem("Window/Heatmap")]
     private static void HeatmapMenuItem()
     {
-        EditorWindow.GetWindow(typeof(HeatmapMenu));
+        GetWindow(typeof(HeatmapMenu), false, "Heatmap", true);
     }
 
     private void OnEnable()
@@ -46,13 +46,6 @@ public class HeatmapMenu : EditorWindow
 
         // Sessions UI
         SessionTable();
-
-        //Slider
-        GUILayout.Label("Heatmap Color Weight:", EditorStyles.boldLabel);
-        if (_heatmapComponent != null)
-        {
-            _heatmapComponent.heatWeight = EditorGUILayout.Slider(_heatmapComponent.heatWeight, 0.01f, 1.0f);
-        }
 
         // Filters for the type of heatmap
         HeatmapTypesUI();
@@ -180,6 +173,9 @@ public class HeatmapMenu : EditorWindow
     private void EventTypeSelectorUI()
     {
         if (heatmapTypeSelectedOption != 1 || _heatmapComponent == null) return;
+
+        GUILayout.Label("Heatmap Color Weight:", EditorStyles.boldLabel);
+        _heatmapComponent.heatWeight = EditorGUILayout.Slider(_heatmapComponent.heatWeight, 0.01f, 1.0f);
 
         _heatmapComponent.eventTypeSelectedOptions = EditorGUILayout.MaskField("Event Types", _heatmapComponent.eventTypeSelectedOptions, _heatmapComponent.eventTypeOptions);
 
