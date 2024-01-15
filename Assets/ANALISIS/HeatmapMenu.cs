@@ -1,10 +1,5 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using static UnityEditor.Progress;
 
 public class HeatmapMenu : EditorWindow
 {
@@ -16,8 +11,6 @@ public class HeatmapMenu : EditorWindow
 
     bool _useAllSessions = false;
     private int heatmapTypeSelectedOption = 0;
-    
-    
 
     [MenuItem("Window/Heatmap")]
     private static void HeatmapMenuItem()

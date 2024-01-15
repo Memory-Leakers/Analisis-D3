@@ -153,7 +153,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
     private Damageable m_Damageable;
     private PlayerController m_PlayerController;
 
-    [SerializeField] private Transform _playerTransfrom;
+    private Transform _playerTransfrom;
 
     private float _moveCountDown = 5;
 
@@ -180,8 +180,7 @@ public class ServerActionsSerialize : MonoBehaviour, IMessageReceiver
         m_PlayerController = GameObject.Find("Ellen").GetComponent<PlayerController>();
         m_PlayerController.messageReceivers.Add(this);
 
-        if (_playerTransfrom != null)
-            _playerTransfrom = GameObject.Find("Ellen").GetComponent<Transform>();
+        _playerTransfrom = GameObject.Find("Ellen").GetComponent<Transform>();
     }
 
     private void OnDisable()
